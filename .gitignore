@@ -1,0 +1,75 @@
+
+@'
+# ==========================================
+# PYTHON ENVIRONMENT AND CACHE
+# ==========================================
+__pycache__/
+*.py[cod]
+*.pyd
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ==========================================
+# SECRETS AND ENVIRONMENT FILES
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# LOCAL MODEL FILES AND CACHES
+# ==========================================
+models/
+*.gguf
+*.safetensors
+.cache/
+huggingface_cache/
+transformers_cache/
+
+# ==========================================
+# PRIVATE DOCUMENTS, DATA AND DATABASES
+# ==========================================
+/data/
+/backup_galt/
+/app/storage/uploads/
+/app/storage/*.json
+
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ==========================================
+# GENERATED EVALUATION RESULTS AND LOGS
+# ==========================================
+/evaluation/
+/logs/
+
+*.log
+*.jsonl
+*.tmp
+*.part
+
+# ==========================================
+# LOCAL BACKUPS AND GENERATED REPORTS
+# ==========================================
+/project_structure.txt
+/app/agents/orchestrator_backup.py
+
+# ==========================================
+# IDE AND OPERATING SYSTEM FILES
+# ==========================================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+'@ | Set-Content -Path .gitignore -Encoding utf8
