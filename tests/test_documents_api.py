@@ -222,6 +222,35 @@ def test_upload_text_document_successfully(
     assert saved_metadata[0]["document_id"] == result["document_id"]
 
 
+def test_upload_normalizes_windows_style_filename(
+    client,
+    tmp_path,
+    monkeypatch,
+):
+    upload_dir = tmp_path / "app" / "storage" / "uploads"
+    processed_dir = tmp_path / "data" / "processed"
+    upload_dir.mkdir(parents=True)
+    processed_dir.mkdir(parents=True)
+    monkeypatch.setattr(documents, "UPLOAD_DIR", upload_dir)
+    monkeypatch.setattr(documents, "PROCESSED_DIR", processed_dir)
+    monkeypatch.setattr(documents, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(documents, "get_document_by_hash", lambda _: None)
+    monkeypatch.setattr(documents, "add_document", lambda _: None)
+    monkeypatch.setattr(
+        documents,
+        "extract_text",
+        lambda _: {"text": "", "page_count": 1, "pages": []},
+    )
+
+    response = client.post(
+        "/api/v1/documents/upload",
+        files={"file": (r"..\\private\\policy.txt", b"safe content", "text/plain")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["filename"] == "policy.txt"
+
+
 
 def test_duplicate_upload_returns_409_and_removes_new_file(
     client,
@@ -576,5 +605,4 @@ def test_upload_preserves_document_when_extraction_fails(
     # Metadata should still be saved.
     assert len(saved_metadata) == 1
     assert saved_metadata[0]["extraction_status"] == "failed"
-
 

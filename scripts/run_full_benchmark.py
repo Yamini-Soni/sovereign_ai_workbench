@@ -181,7 +181,10 @@ def run_benchmark(
             if claim_ver.get("supported"):
                 claim_supported_count += 1
 
-        if case.get("doc") and dry_run:
+        # Retrieval quality must be measured for live runs too.  Previously
+        # these metrics were only populated for the synthetic dry-run path,
+        # which made a real report misleadingly contain null retrieval values.
+        if case.get("doc"):
             r_metrics = compute_retrieval_metrics(ranked_docs, {case["doc"]}, k=top_k)
             retrieval_scores.append(r_metrics)
 

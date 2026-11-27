@@ -19,6 +19,7 @@ from app.security.sanitizer import (
     sanitize_retrieved_context,
     validate_document_id,
 )
+from app.security import audit
 
 
 @pytest.fixture
@@ -147,6 +148,31 @@ def test_log_redaction_filter():
     )
     SensitiveDataFilter().filter(record)
     assert "my-secret-value-99" not in record.msg
+
+
+def test_security_audit_drops_document_content_and_redacts_metadata(tmp_path, monkeypatch):
+    audit_path = tmp_path / "security_audit.jsonl"
+    monkeypatch.setattr(audit, "SECURITY_AUDIT_FILE", audit_path)
+
+    audit.log_security_event(
+        event_type="prompt_injection_detected",
+        status="neutralized",
+        detail="Detected 1 marker.",
+        metadata={
+            "document_id": "doc-42",
+            "chunk_index": 3,
+            "text": "Confidential annual leave policy: 20 days.",
+            "question": "What is the employee password?",
+            "token": "sk-1234567890abcdef1234",
+        },
+    )
+
+    logged = audit_path.read_text(encoding="utf-8")
+    event = json.loads(logged)
+    assert event["metadata"] == {"document_id": "doc-42", "chunk_index": 3}
+    assert "annual leave policy" not in logged
+    assert "employee password" not in logged
+    assert "sk-1234567890abcdef1234" not in logged
 
 
 def test_prompt_injected_agent_tool_call_is_blocked(monkeypatch):

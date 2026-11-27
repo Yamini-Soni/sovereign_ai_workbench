@@ -15,7 +15,7 @@ The workbench is structured into eight decoupled layers:
 - **Multimodal Vision Layer**: `vision_service.py` invokes `qwen2.5vl:3b` locally for scene description, VQA, document-layout reading, and combined image-and-policy agent queries (`/api/v1/agent/run-with-image`).
 - **Security Controls**: Loopback-only endpoint enforcement (`validate_local_endpoint`), path-traversal rejection, prompt-injection sanitization, and redacted JSONL audit logging.
 
-## 3. Experimental Setup & Preliminary Results
+## 3. Experimental Setup & Results
 ### 3.1 Baseline Experiment 01 (Recorded)
 Evaluated on the NexaTech Company Policy dataset (15 questions: 10 answerable, 5 unanswerable) using `llama3.2:3b`, `all-MiniLM-L6-v2`, SQLite, Top-K=3, and minimum similarity 0.30 (`docs/baseline_experiment.md`):
 - **Answerable accuracy**: 9/10 (90.0%)
@@ -29,6 +29,26 @@ Question Q05 (*"What is the minimum password length?"*) retrieved the correct po
 
 ### 3.3 Expanded Benchmark Suite
 To extend evaluation beyond a single 15-question document, `benchmarks/benchmark_cases.json` introduces 26 QA cases across a multi-document synthetic industrial corpus (HR/IT policy, centrifugal pump P-204 maintenance manual, and an archived adversarial draft testing retrieval contamination and prompt injection) plus 4 agent tool-selection/safety cases, measured by `scripts/run_full_benchmark.py` (Recall@K, Precision@K, MRR@K, refusal accuracy, claim support ratio, median/p95 latency, and RAM/VRAM usage).
+
+### 3.4 Live Hybrid Benchmark (2026-11-27)
+The expanded harness was executed in live mode with `llama3.2:3b`, the hybrid retrieval setting, and the local SQLite vector store. The versioned benchmark corpus was first indexed under stable case IDs by `prepare_benchmark_corpus.py`. The run covered 26 QA cases and replaces the earlier deterministic dry-run result; its reported 100% scores are therefore not used as performance evidence.
+
+| Measure | Observed result |
+| :--- | --: |
+| Answerable accuracy | 100.0% (20/20) |
+| Refusal accuracy | 0.0% (0/6) |
+| Overall pass rate | 76.92% (20/26) |
+| Claim support rate | 34.62% (9/26) |
+| Mean Recall@5 | 1.0000 |
+| Mean MRR@5 | 0.7917 |
+| Median end-to-end latency | 1.103 s |
+| P95 end-to-end latency | 3.661 s |
+| GPU telemetry | Not available on this host |
+
+The result shows good retrieval coverage on this small synthetic corpus, but a material refusal failure: all six out-of-scope questions produced non-refusal answers. Claim verification also supported only 9 of 26 generated responses. The earlier ID-mismatch run was discarded; the harness now records live retrieval metrics and the corpus-preparation script makes the evaluation repeatable.
+
+### 3.5 Live Security Validation (2026-11-27)
+`scripts/validate_security_live.py` submitted one deliberately malicious prompt to the real local agent and evaluated its temporary audit log. Injection indicators were detected; an external endpoint was rejected; no disallowed tool appeared in the one-step agent trace; and no injected secret or document text appeared in the audit output. This is a narrow integration check, not a substitute for a larger prompt-injection or PII benchmark.
 
 ## 4. Limitations & Future Work
 - **Compact Model Reasoning**: 3B-parameter models fit 6 GB VRAM laptops but exhibit occasional JSON planner errors and numeric contradictions compared to larger models.

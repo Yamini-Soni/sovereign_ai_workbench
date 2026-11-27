@@ -121,3 +121,19 @@ def delete_document_metadata(document_id: str) -> bool:
 
         return True
 
+
+def update_document_metadata(document_id: str, updates: dict) -> dict | None:
+    """Update fields on an existing document metadata record atomically."""
+
+    with _store_lock:
+        documents = _load_metadata_unlocked()
+
+        for index, document in enumerate(documents):
+            if document.get("document_id") == document_id:
+                updated = {**document, **updates}
+                documents[index] = updated
+                _save_metadata_unlocked(documents)
+                return updated
+
+        return None
+

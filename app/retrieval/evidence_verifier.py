@@ -223,3 +223,102 @@ def verify_password_length(
                     }
 
     return None
+
+
+_CLAIM_STOPWORDS = {
+    "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+    "and", "or", "but", "to", "of", "in", "on", "at", "by", "for", "from",
+    "with", "that", "this", "these", "those", "it", "its", "as", "must",
+    "may", "can", "should", "will", "would", "could", "has", "have", "had",
+}
+
+
+def _claim_tokens(text: str) -> set[str]:
+    tokens = re.findall(r"[a-z0-9]+", text.lower())
+    return {
+        token
+        for token in tokens
+        if token not in _CLAIM_STOPWORDS and (len(token) > 2 or token.isdigit())
+    }
+
+
+def verify_answer_claims(answer: str, chunks: list[dict]) -> dict:
+    """
+    Evaluate whether sentences in a generated answer are lexically and numerically
+    grounded in the retrieved source chunks.
+    """
+    if not answer or not answer.strip():
+        return {
+            "supported": False,
+            "total_sentences": 0,
+            "supported_sentences": 0,
+            "unsupported_sentences": [],
+            "support_ratio": 0.0,
+        }
+
+    # Refusal responses do not make document factual claims.
+    if "could not find" in answer.lower():
+        return {
+            "supported": True,
+            "total_sentences": 0,
+            "supported_sentences": 0,
+            "unsupported_sentences": [],
+            "support_ratio": 1.0,
+        }
+
+    # Strip trailing bracketed citations before inspecting claim text.
+    cleaned = re.sub(r"\[[^\]]+\|\s*page\s+\d+\]", "", answer, flags=re.IGNORECASE)
+    sentences = [
+        s.strip()
+        for s in re.split(r"(?<=[.!?])\s+|\n+", cleaned)
+        if s.strip() and not s.strip().startswith("#")
+    ]
+
+    factual_sentences = [
+        s for s in sentences if len(_claim_tokens(s)) >= 2
+    ]
+
+    if not factual_sentences:
+        return {
+            "supported": True,
+            "total_sentences": 0,
+            "supported_sentences": 0,
+            "unsupported_sentences": [],
+            "support_ratio": 1.0,
+        }
+
+    unsupported = []
+    supported_count = 0
+
+    for sentence in factual_sentences:
+        sent_tokens = _claim_tokens(sentence)
+        sent_numbers = set(re.findall(r"\b\d+(?:\.\d+)?\b", sentence))
+
+        matched = False
+        for chunk in chunks:
+            chunk_text = chunk.get("text", "")
+            chunk_numbers = set(re.findall(r"\b\d+(?:\.\d+)?\b", chunk_text))
+            if not sent_numbers.issubset(chunk_numbers):
+                continue
+
+            chunk_tokens = _claim_tokens(chunk_text)
+            overlap = sent_tokens.intersection(chunk_tokens)
+            if len(overlap) >= 2 and (len(overlap) / len(sent_tokens)) >= 0.30:
+                matched = True
+                break
+
+        if matched:
+            supported_count += 1
+        else:
+            unsupported.append(sentence)
+
+    total = len(factual_sentences)
+    ratio = round(supported_count / total, 4) if total else 1.0
+
+    return {
+        "supported": len(unsupported) == 0,
+        "total_sentences": total,
+        "supported_sentences": supported_count,
+        "unsupported_sentences": unsupported,
+        "support_ratio": ratio,
+    }

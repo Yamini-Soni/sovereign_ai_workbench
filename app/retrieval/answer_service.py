@@ -4,17 +4,22 @@ import urllib.request
 import re
 
 from app.retrieval.semantic_search import semantic_search
+from app.retrieval.hybrid_search import hybrid_search
 from app.retrieval.vector_store import get_all_vectors
 from app.storage.model_store import get_model_settings
 from app.core.config import settings
 from app.retrieval.evidence_verifier import (
+    verify_answer_claims,
     verify_password_length,
     verify_policy_facts,
 )
+from app.security.audit import log_security_event
+from app.security.network_guard import validate_local_endpoint
+from app.security.sanitizer import sanitize_retrieved_context
 from app.storage.metadata_store import get_all_documents
 
 
-OLLAMA_URL = "http://localhost:11434/api/chat"
+OLLAMA_URL = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/api/chat"
 
 
 TOP_K = 3
@@ -429,12 +434,24 @@ def format_citations(answer: str, chunks: list[dict]) -> str:
 
 def ask_llm(question: str, chunks: list[dict]) -> str:
     """Generate an answer using the local Ollama model."""
+    validate_local_endpoint(OLLAMA_URL, "Ollama chat endpoint")
 
-    context = "\n\n".join(
-        f"[{chunk['source_label']}]\n"
-        f"{chunk['text']}"
-        for chunk in chunks
-    )
+    sanitized_blocks = []
+    for chunk in chunks:
+        cleaned_text, injection_hits = sanitize_retrieved_context(chunk["text"])
+        if injection_hits:
+            log_security_event(
+                event_type="prompt_injection_detected",
+                status="neutralized",
+                detail=f"Detected {len(injection_hits)} injection marker(s) in retrieved context.",
+                metadata={
+                    "document_id": chunk.get("document_id"),
+                    "chunk_index": chunk.get("chunk_index"),
+                },
+            )
+        sanitized_blocks.append(f"[{chunk['source_label']}]\n{cleaned_text}")
+
+    context = "\n\n".join(sanitized_blocks)
 
     payload = {
         "model": get_model_settings()["text"],
@@ -523,11 +540,12 @@ def generate_grounded_answer(
 def answer_question(
     question: str,
     document_id: str | None = None,
+    retrieval_mode: str = "semantic",
 ) -> dict:
     """
     Complete RAG question-answering pipeline.
 
-    Semantic retrieval + neighbouring-chunk expansion
+    Semantic or hybrid retrieval + neighbouring-chunk expansion
     + full-collection evidence verification
     + metadata enrichment + local LLM fallback.
     """
@@ -537,12 +555,30 @@ def answer_question(
         BROAD_TOP_K if broad_question else TOP_K
     )
 
-    chunks = semantic_search(
-        query=question,
-        top_k=retrieval_top_k,
-        min_similarity=MIN_SIMILARITY,
-        document_id=document_id,
-    )
+    if retrieval_mode == "hybrid":
+        raw_chunks = hybrid_search(
+            query=question,
+            top_k=retrieval_top_k,
+            document_id=document_id,
+        )
+        chunks = [
+            {
+                **item,
+                "similarity_score": (
+                    item.get("semantic_score")
+                    if item.get("semantic_score") is not None
+                    else item.get("rrf_score")
+                ),
+            }
+            for item in raw_chunks
+        ]
+    else:
+        chunks = semantic_search(
+            query=question,
+            top_k=retrieval_top_k,
+            min_similarity=MIN_SIMILARITY,
+            document_id=document_id,
+        )
 
     # 1. Retrieve the most relevant chunks.
     
@@ -584,18 +620,32 @@ def answer_question(
         verification_chunks=all_enriched_chunks,
     )
 
-    # 6. Format citations for LLM-generated answers.
-    
+    # 6. Format citations and verify claims for LLM-generated answers.
+    claim_verification = None
+
     if method == "local_llm":
         answer = add_evidence_citations(
             answer,
             expanded_chunks,
-    )
+        )
 
         answer = format_citations(
             answer,
             expanded_chunks,
         )
+
+        claim_verification = verify_answer_claims(
+            answer,
+            expanded_chunks,
+        )
+    elif evidence is not None:
+        claim_verification = {
+            "supported": True,
+            "total_sentences": 1,
+            "supported_sentences": 1,
+            "unsupported_sentences": [],
+            "support_ratio": 1.0,
+        }
 
     # 7. Start with the chunks used to generate the answer.
     if method == "local_llm":
@@ -647,5 +697,6 @@ def answer_question(
         "answer": answer,
         "answer_method": method,
         "verified_evidence": evidence,
+        "claim_verification": claim_verification,
         "sources": sources,
     }

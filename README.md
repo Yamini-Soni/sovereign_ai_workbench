@@ -79,8 +79,15 @@ python -m pytest -v
 
 Run the expanded benchmark harness (offline deterministic dry-run or live Ollama mode):
 ```bash
+python -m scripts.prepare_benchmark_corpus
 python -m scripts.run_full_benchmark --dry-run
 python -m scripts.run_full_benchmark --retrieval-mode hybrid
+```
+
+Run the live local-model security validation (it checks injection detection,
+local-only endpoint blocking, tool safety, and audit-log privacy):
+```bash
+python -m scripts.validate_security_live
 ```
 
 Migrate vectors from SQLite to a running local Qdrant instance (`http://127.0.0.1:6333`):

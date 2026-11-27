@@ -9,6 +9,38 @@ from app.security.sanitizer import redact_sensitive_text
 
 SECURITY_AUDIT_FILE = BASE_DIR / "logs" / "security_audit.jsonl"
 
+# Audit events are operational telemetry, not a second document store.  Keep
+# only identifiers and counters that are useful for investigation; in
+# particular, never persist retrieved text, prompts, answers, or filenames.
+_SAFE_METADATA_KEYS = frozenset({
+    "document_id",
+    "chunk_index",
+    "model",
+    "tool",
+    "count",
+})
+
+
+def _safe_metadata(metadata: dict | None) -> dict:
+    """Return the small allowlisted subset of audit metadata.
+
+    Values are redacted as a final defence in depth measure.  Unknown keys are
+    intentionally omitted because callers may otherwise accidentally pass a
+    user prompt or retrieved document content.
+    """
+    if not isinstance(metadata, dict):
+        return {}
+
+    safe = {}
+    for key, value in metadata.items():
+        if key not in _SAFE_METADATA_KEYS:
+            continue
+        if isinstance(value, str):
+            safe[key] = redact_sensitive_text(value)
+        elif isinstance(value, (int, float, bool)) or value is None:
+            safe[key] = value
+    return safe
+
 
 def log_security_event(
     event_type: str,
@@ -22,7 +54,7 @@ def log_security_event(
         "event_type": event_type,
         "status": status,
         "detail": redact_sensitive_text(detail) if detail else None,
-        "metadata": metadata or {},
+        "metadata": _safe_metadata(metadata),
     }
 
     SECURITY_AUDIT_FILE.parent.mkdir(parents=True, exist_ok=True)

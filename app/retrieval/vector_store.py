@@ -2,7 +2,7 @@
 import json
 import sqlite3
 
-from app.core.config import BASE_DIR
+from app.core.config import BASE_DIR, settings
 
 
 DATABASE_PATH = (
@@ -15,6 +15,10 @@ DATABASE_PATH.parent.mkdir(
 )
 
 
+def _use_qdrant() -> bool:
+    return getattr(settings, "VECTOR_STORE_BACKEND", "sqlite") == "qdrant"
+
+
 def get_connection():
     connection = sqlite3.connect(DATABASE_PATH)
     connection.row_factory = sqlite3.Row
@@ -23,9 +27,13 @@ def get_connection():
 
 def initialize_vector_store():
     """
-    Create the SQLite table used to store document chunks
-    and their embedding vectors.
+    Create the vector storage table or collection based on VECTOR_STORE_BACKEND.
     """
+    if _use_qdrant():
+        from app.retrieval.qdrant_store import initialize_qdrant_collection
+
+        initialize_qdrant_collection()
+        return
 
     with get_connection() as connection:
         connection.execute("""
@@ -54,6 +62,15 @@ def store_embeddings(
     """
     Persist document chunks and their embeddings.
     """
+    if _use_qdrant():
+        from app.retrieval.qdrant_store import store_qdrant_embeddings
+
+        store_qdrant_embeddings(
+            document_id=document_id,
+            chunks=chunks,
+            embeddings=embeddings,
+        )
+        return
 
     if len(chunks) != len(embeddings):
         raise ValueError(
@@ -98,6 +115,10 @@ def store_embeddings(
 
 def get_vector_count() -> int:
     """Return the total number of stored vectors."""
+    if _use_qdrant():
+        from app.retrieval.qdrant_store import get_qdrant_vector_count
+
+        return get_qdrant_vector_count()
 
     with get_connection() as connection:
         result = connection.execute("""
@@ -110,6 +131,10 @@ def get_vector_count() -> int:
 
 def get_document_vectors(document_id: str) -> list[dict]:
     """Retrieve all stored vectors for one document."""
+    if _use_qdrant():
+        from app.retrieval.qdrant_store import get_qdrant_vectors
+
+        return get_qdrant_vectors(document_id=document_id)
 
     with get_connection() as connection:
         rows = connection.execute("""
@@ -143,6 +168,10 @@ def get_all_vectors(
     If document_id is provided, retrieve chunks
     only from that particular document.
     """
+    if _use_qdrant():
+        from app.retrieval.qdrant_store import get_qdrant_vectors
+
+        return get_qdrant_vectors(document_id=document_id)
 
     with get_connection() as connection:
 
@@ -177,6 +206,10 @@ def get_all_vectors(
 
 def delete_document_vectors(document_id: str) -> int:
     """Delete all vectors belonging to one document."""
+    if _use_qdrant():
+        from app.retrieval.qdrant_store import delete_qdrant_document_vectors
+
+        return delete_qdrant_document_vectors(document_id)
 
     with get_connection() as connection:
         cursor = connection.execute(

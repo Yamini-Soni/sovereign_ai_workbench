@@ -1,0 +1,19 @@
+NEXATECH INDUSTRIAL MAINTENANCE & EQUIPMENT SOP (SYNTHETIC BENCHMARK CORPUS)
+Document ID: industrial_maintenance_manual_v1
+Page 1
+
+1. Laptop and Workstation Replacement
+Employees must request manager and IT approval before replacing a company laptop.
+Standard laptop replacement cycle is 36 months unless hardware failure occurs.
+Company laptops must be returned on the employee's last working day.
+
+2. Industrial Pump & Valve Inspection Procedure
+Before inspecting centrifugal pump P-204, operators must isolate electrical power and lock out the breaker.
+Visual inspection must verify pressure gauge readings stay between 40 PSI and 65 PSI under normal load.
+Bearing housing temperature must not exceed 75 degrees Celsius during continuous operation.
+Coolant filter cartridges must be replaced every 500 operating hours.
+If abnormal vibration or seal leakage is observed, shut down the pump immediately and log a Tier-1 maintenance ticket.
+
+3. Safety PPE Requirements
+Safety goggles and insulated gloves are mandatory inside Zone B compressor rooms.
+Acoustic ear protection is required whenever ambient noise exceeds 85 dBA.
