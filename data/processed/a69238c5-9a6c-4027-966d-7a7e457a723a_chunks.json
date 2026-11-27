@@ -1,0 +1,38 @@
+[
+    {
+        "chunk_index": 0,
+        "page_chunk_index": 0,
+        "page_number": 1,
+        "text": "NEXATECH INDUSTRIAL MAINTENANCE & EQUIPMENT SOP (SYNTHETIC BENCHMARK CORPUS)\nDocument ID: industrial_maintenance_manual_v1\nPage 1\n\n1. Laptop and Workstation Replacement\nEmployees must request manager and IT approval before replacing a company"
+    },
+    {
+        "chunk_index": 1,
+        "page_chunk_index": 1,
+        "page_number": 1,
+        "text": "IT approval before replacing a company laptop.\nStandard laptop replacement cycle is 36 months unless hardware failure occurs.\nCompany laptops must be returned on the employee's last working day.\n\n2. Industrial Pump & Valve Inspection Procedure"
+    },
+    {
+        "chunk_index": 2,
+        "page_chunk_index": 2,
+        "page_number": 1,
+        "text": "Pump & Valve Inspection Procedure\nBefore inspecting centrifugal pump P-204, operators must isolate electrical power and lock out the breaker.\nVisual inspection must verify pressure gauge readings stay between 40 PSI and 65 PSI under normal load."
+    },
+    {
+        "chunk_index": 3,
+        "page_chunk_index": 3,
+        "page_number": 1,
+        "text": "40 PSI and 65 PSI under normal load.\nBearing housing temperature must not exceed 75 degrees Celsius during continuous operation.\nCoolant filter cartridges must be replaced every 500 operating hours.\nIf abnormal vibration or seal leakage is observed,"
+    },
+    {
+        "chunk_index": 4,
+        "page_chunk_index": 4,
+        "page_number": 1,
+        "text": "vibration or seal leakage is observed, shut down the pump immediately and log a Tier-1 maintenance ticket.\n\n3. Safety PPE Requirements\nSafety goggles and insulated gloves are mandatory inside Zone B compressor rooms.\nAcoustic ear protection is"
+    },
+    {
+        "chunk_index": 5,
+        "page_chunk_index": 5,
+        "page_number": 1,
+        "text": "rooms.\nAcoustic ear protection is required whenever ambient noise exceeds 85 dBA."
+    }
+]

@@ -5,10 +5,12 @@ import base64
 import json
 import urllib.error
 import urllib.request
+from app.core.config import settings
+from app.security.network_guard import validate_local_endpoint
 from app.storage.model_store import get_model_settings
 
 
-OLLAMA_URL = "http://localhost:11434/api/chat"
+OLLAMA_URL = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/api/chat"
 
 
 
@@ -35,6 +37,7 @@ def analyze_image(
     question: str | None = None,
 ) -> dict:
     """Send an image to the local vision model."""
+    validate_local_endpoint(OLLAMA_URL, "Ollama vision endpoint")
 
     if not image_bytes:
         raise ValueError("Image data cannot be empty.")

@@ -1,6 +1,8 @@
 
 from pathlib import Path
 
+from app.security.sanitizer import sanitize_filename
+
 # Allowed document file extensions
 ALLOWED_EXTENSIONS = {
     ".pdf",
@@ -29,7 +31,8 @@ def validate_file(filename: str, file_size: int) -> bool:
         ValueError: If the file type or size is invalid.
     """
 
-    extension = Path(filename).suffix.lower()
+    safe_filename = sanitize_filename(filename)
+    extension = Path(safe_filename).suffix.lower()
 
     # Check file extension
     if extension not in ALLOWED_EXTENSIONS:

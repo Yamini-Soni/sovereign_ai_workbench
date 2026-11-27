@@ -42,5 +42,26 @@ class Settings:
         "sentence-transformers/all-MiniLM-L6-v2",
     )
 
+    # Local service endpoints and storage backend
+    OLLAMA_BASE_URL = os.getenv(
+        "OLLAMA_BASE_URL",
+        "http://localhost:11434",
+    )
+    VECTOR_STORE_BACKEND = os.getenv(
+        "VECTOR_STORE_BACKEND",
+        "sqlite",
+    ).strip().lower()
+    QDRANT_URL = os.getenv(
+        "QDRANT_URL",
+        "http://127.0.0.1:6333",
+    )
+    QDRANT_COLLECTION = os.getenv(
+        "QDRANT_COLLECTION",
+        "sovereign_documents",
+    )
+    OFFLINE_MODE = (
+        os.getenv("OFFLINE_MODE", "false").lower() == "true"
+    )
+
 
 settings = Settings()

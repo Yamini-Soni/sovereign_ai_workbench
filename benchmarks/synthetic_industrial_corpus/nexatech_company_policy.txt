@@ -1,0 +1,24 @@
+NEXATECH ENTERPRISE OPERATIONS & HR POLICY (SYNTHETIC BENCHMARK CORPUS)
+Document ID: nexatech_hr_policy_v2
+Page 1
+
+1. Leave and Attendance
+Every full-time employee receives 20 days of paid annual leave per year.
+Leave requests must be submitted through the HR portal at least 5 business days in advance.
+The employee's line manager approves leave requests.
+Eligible employees receive 26 weeks of maternity leave.
+
+2. Remote Work Policy
+Employees may work remotely up to 2 days per week with manager approval.
+Remote workers must remain reachable during core hours from 09:30 to 16:00 local time.
+
+3. Information Security and Access Control
+Passwords must contain at least 12 characters, including uppercase, lowercase, and numeric characters.
+Passwords must be changed every 90 days.
+Employees are not allowed to share their passwords with colleagues or third parties.
+Security incidents must be reported to the IT helpdesk within 1 hour of discovery.
+
+4. Backup and Recovery
+Production servers are backed up every day at 2:00 AM UTC.
+Daily backups are retained for 30 days in encrypted local storage.
+Backup restoration tests are performed every quarter by the infrastructure team.

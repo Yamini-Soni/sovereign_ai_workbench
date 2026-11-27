@@ -1,0 +1,4 @@
+{"timestamp": "2026-11-26T18:04:09.121653+00:00", "event_type": "invalid_document_id", "status": "rejected", "detail": "Invalid document ID format.", "metadata": {}}
+{"timestamp": "2026-11-26T18:04:09.141533+00:00", "event_type": "agent_prompt_injection_flagged", "status": "monitored", "detail": "Flagged 1 prompt-injection indicator(s) in user prompt.", "metadata": {}}
+{"timestamp": "2026-11-26T18:05:30.074549+00:00", "event_type": "invalid_document_id", "status": "rejected", "detail": "Invalid document ID format.", "metadata": {}}
+{"timestamp": "2026-11-26T18:05:30.077162+00:00", "event_type": "agent_prompt_injection_flagged", "status": "monitored", "detail": "Flagged 1 prompt-injection indicator(s) in user prompt.", "metadata": {}}

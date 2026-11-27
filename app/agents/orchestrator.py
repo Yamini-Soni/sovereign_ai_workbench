@@ -12,9 +12,12 @@ from app.agents.argument_validator import validate_arguments
 from app.storage.model_store import get_model_settings
 from app.agents.tool_executor import execute_tool
 from app.retrieval.answer_service import answer_question
+from app.security.audit import log_security_event
+from app.security.network_guard import validate_local_endpoint
+from app.security.sanitizer import detect_prompt_injection
 
 
-OLLAMA_URL = "http://localhost:11434/api/chat"
+OLLAMA_URL = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/api/chat"
 
 
 MAX_STEPS = 3
@@ -380,6 +383,7 @@ def plan_with_llm(
     available_tools: dict | None = None,
 ) -> str:
     """Ask Ollama to select the next single action."""
+    validate_local_endpoint(OLLAMA_URL, "Ollama agent planner endpoint")
 
     if available_tools is None:
         available_tools = _get_available_tools()
@@ -540,6 +544,11 @@ def _requires_document_evidence(question: str) -> bool:
         "document",
         "policy",
         "company rules",
+        "manual",
+        "guideline",
+        "procedure",
+        "handbook",
+        "standard",
     )
 
     return any(term in text for term in indicators)
@@ -767,6 +776,14 @@ def run_agent(
             )
 
     start_time = time.perf_counter()
+
+    injection_hits = detect_prompt_injection(question)
+    if injection_hits:
+        log_security_event(
+            event_type="agent_prompt_injection_flagged",
+            status="monitored",
+            detail=f"Flagged {len(injection_hits)} prompt-injection indicator(s) in user prompt.",
+        )
 
     planner_function = planner or plan_with_llm
 
